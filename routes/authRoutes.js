@@ -16,10 +16,10 @@ const loginValidation = [
 ];
 
 // Route to setup initial admin (one-time use)
-router.post('admin/setup', setupAdmin);
+router.post('/admin/setup', setupAdmin);
 
 // Admin Login Route
-router.post('admin', loginValidation, loginAdmin);
+router.post('/admin', loginValidation, loginAdmin);
 
 // Change Password Route (protected)
 router.put('admin/change-password', 
