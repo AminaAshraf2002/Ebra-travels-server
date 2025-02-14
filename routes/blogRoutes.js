@@ -1,4 +1,3 @@
-// routes/blogRoutes.js
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
@@ -6,17 +5,17 @@ const path = require('path');
 const fs = require('fs');
 const { protect } = require('../middleware/authMiddleware');
 
-const { 
+const {
     getAllBlogs,
     getBlogById,
-    createBlog, 
-    updateBlog, 
+    createBlog,
+    updateBlog,
     deleteBlog,
     getAllBlogsAdmin,
     getBlogByIdAdmin
 } = require('../controllers/blogController');
 
-// Multer configuration (keep as is)
+// Multer configuration
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const uploadDir = 'uploads/blogs';
@@ -45,14 +44,14 @@ const upload = multer({
 });
 
 // Public routes (anyone can access)
-router.get('/', getAllBlogs);
-router.get('/:id', getBlogById);
+router.get('/blog', getAllBlogs);
+router.get('/blog/:id', getBlogById);
 
 // Admin-only routes
-router.get('/admin/blogs/all', protect, getAllBlogsAdmin);
+router.get('/admin/blogs', protect, getAllBlogsAdmin);
 router.get('/admin/blogs/:id', protect, getBlogByIdAdmin);
-router.post('/', protect, upload.single('image'), createBlog);
-router.put('/:id', protect, upload.single('image'), updateBlog);
-router.delete('/:id', protect, deleteBlog);
+router.post('/admin/blogs', protect, upload.single('image'), createBlog);
+router.put('/admin/blogs/:id', protect, upload.single('image'), updateBlog);
+router.delete('/admin/blogs/:id', protect, deleteBlog);
 
 module.exports = router;
