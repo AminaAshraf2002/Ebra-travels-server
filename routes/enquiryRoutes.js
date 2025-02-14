@@ -10,10 +10,10 @@ const {
 const { protect } = require('../middleware/authMiddleware');
 
 // Public route for creating enquiry
-router.post('/', createEnquiry);
+router.post('/blogs', createEnquiry);
 
 // Protected admin routes
-router.get('/', protect, getAllEnquiries);
+router.get('/admin/enquiries', protect, getAllEnquiries);
 router.put('/:id/status', protect, updateEnquiryStatus);
 router.delete('/:id', protect, deleteEnquiry);
 router.get('/stats', protect, getEnquiryStats);
