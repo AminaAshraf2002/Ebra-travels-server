@@ -49,8 +49,8 @@ router.get('/', getAllBlogs);
 router.get('/:id', getBlogById);
 
 // Admin-only routes
-router.get('/admin/all', protect, getAllBlogsAdmin);
-router.get('/admin/:id', protect, getBlogByIdAdmin);
+router.get('/admin/blogs/all', protect, getAllBlogsAdmin);
+router.get('/admin/blogs/:id', protect, getBlogByIdAdmin);
 router.post('/', protect, upload.single('image'), createBlog);
 router.put('/:id', protect, upload.single('image'), updateBlog);
 router.delete('/:id', protect, deleteBlog);
