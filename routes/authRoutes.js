@@ -19,7 +19,7 @@ const loginValidation = [
 router.post('/setup', setupAdmin);
 
 // Admin Login Route
-router.post('/login', loginValidation, loginAdmin);
+router.post('/admin', loginValidation, loginAdmin);
 
 // Change Password Route (protected)
 router.put('/change-password', 
