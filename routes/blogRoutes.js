@@ -14,7 +14,7 @@ const {
     getBlogByIdAdmin
 } = require('../controllers/blogController');
 
-// Multer configuration remains the same
+// Multer configuration
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const uploadDir = 'uploads/blogs';
@@ -31,7 +31,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
         if (allowedTypes.includes(file.mimetype)) {
@@ -42,15 +42,15 @@ const upload = multer({
     }
 });
 
-// Public routes (anyone can access)
-router.get('/', getAllBlogs);           // Changed from '/blog' to '/'
-router.get('/:id', getBlogById);        // Changed from '/blog/:id' to '/:id'
+// Public routes
+router.get('/', getAllBlogs);
+router.get('/:id', getBlogById);
 
-// Admin-only routes
-router.get('/admin/blogs', protect, getAllBlogsAdmin);        // This is correct
-router.get('/admin/blogs/:id', protect, getBlogByIdAdmin);    // This is correct
-router.post('/admin/blogs', protect, upload.single('image'), createBlog);     // This is correct
-router.put('/admin/blogs/:id', protect, upload.single('image'), updateBlog);  // This is correct
-router.delete('/admin/blogs/:id', protect, deleteBlog);       // This is correct
+// Admin routes - Remove the extra 'blogs' from paths
+router.get('/admin', protect, getAllBlogsAdmin);        // Changed this
+router.get('/admin/:id', protect, getBlogByIdAdmin);    // Changed this
+router.post('/admin', protect, upload.single('image'), createBlog);     // Changed this
+router.put('/admin/:id', protect, upload.single('image'), updateBlog);  // Changed this
+router.delete('/admin/:id', protect, deleteBlog);       // Changed this
 
 module.exports = router;
