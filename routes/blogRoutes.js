@@ -42,15 +42,25 @@ const upload = multer({
     }
 });
 
-// Public routes
+// Admin routes FIRST
+router.get('/admin', protect, getAllBlogsAdmin);
+router.get('/admin/:id', protect, getBlogByIdAdmin);
+router.post('/admin', protect, upload.single('image'), createBlog);
+router.put('/admin/:id', protect, upload.single('image'), updateBlog);
+router.delete('/admin/:id', protect, deleteBlog);
+
+// Then public routes
 router.get('/', getAllBlogs);
 router.get('/:id', getBlogById);
 
-// Admin routes - Remove the extra 'blogs' from paths
-router.get('/admin', protect, getAllBlogsAdmin);        // Changed this
-router.get('/admin/:id', protect, getBlogByIdAdmin);    // Changed this
-router.post('/admin', protect, upload.single('image'), createBlog);     // Changed this
-router.put('/admin/:id', protect, upload.single('image'), updateBlog);  // Changed this
-router.delete('/admin/:id', protect, deleteBlog);       // Changed this
+// Add debug logging
+router.use((req, res, next) => {
+    console.log('Blog Route accessed:', {
+        path: req.path,
+        method: req.method,
+        isAuthenticated: !!req.user
+    });
+    next();
+});
 
 module.exports = router;
