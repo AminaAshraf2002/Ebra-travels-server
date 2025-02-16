@@ -21,7 +21,7 @@ const app = express();
 const allowedOrigins = [
     'https://ebra-travels.onrender.com',
     'http://localhost:5173',
-    'http://localhost:3000'
+    'http://localhost:5000'
 ];
 
 // Enhanced helmet configuration
