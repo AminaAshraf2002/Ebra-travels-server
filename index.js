@@ -17,30 +17,44 @@ const connectDB = require('./config/database');
 // Initialize Express
 const app = express();
 
-// Enhanced helmet configuration for security while allowing image serving
+// Allow these origins
+const allowedOrigins = [
+    'https://ebra-travels.onrender.com',
+    'http://localhost:5173',
+    'http://localhost:3000'
+];
+
+// Enhanced helmet configuration
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "blob:", "http:", "https:"],
-      connectSrc: ["'self'", "http:", "https:"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      fontSrc: ["'self'", "data:", "https:"],
-      mediaSrc: ["'self'", "data:", "https:"]
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            imgSrc: ["'self'", "data:", "blob:", "http:", "https:"],
+            connectSrc: ["'self'", "http:", "https:"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            fontSrc: ["'self'", "data:", "https:"],
+            mediaSrc: ["'self'", "data:", "https:"]
+        }
     }
-  }
 }));
 
-// Enhanced CORS configuration
+// CORS configuration
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  credentials: true,
-  maxAge: 86400 // 24 hours
+    origin: function(origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) === -1) {
+            return callback(new Error('CORS not allowed'), false);
+        }
+        return callback(null, true);
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    maxAge: 86400
 }));
 
 // Logging middleware
@@ -50,104 +64,118 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Enhanced static file serving with specific headers
-app.use('/uploads', (req, res, next) => {
-  res.set({
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET',
-    'Cache-Control': 'public, max-age=3600',
-    'Pragma': 'no-cache',
-    'X-Content-Type-Options': 'nosniff'
-  });
-  next();
-}, express.static(path.join(__dirname, 'uploads'), {
-  maxAge: '1h',
-  etag: true,
-  lastModified: true
+// Static file serving
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+    setHeaders: (res, path) => {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+    }
 }));
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/blogs', blogRoutes);
-app.use('/api/enquiries', enquiryRoutes);
+// Debug logging for routes
+app.use('/api/auth', (req, res, next) => {
+    console.log('Auth route accessed:', {
+        method: req.method,
+        path: req.path,
+        token: req.headers.authorization
+    });
+    next();
+}, authRoutes);
+
+app.use('/api/blogs', (req, res, next) => {
+    console.log('Blog route accessed:', {
+        method: req.method,
+        path: req.path,
+        token: req.headers.authorization
+    });
+    next();
+}, blogRoutes);
+
+app.use('/api/enquiries', (req, res, next) => {
+    console.log('Enquiry route accessed:', {
+        method: req.method,
+        path: req.path,
+        token: req.headers.authorization
+    });
+    next();
+}, enquiryRoutes);
 
 // Root route
 app.get('/', (req, res) => {
-  res.json({
-    message: 'Welcome to Ebra Holidays Backend',
-    status: 'Running',
-    timestamp: new Date().toISOString(),
-    version: process.env.npm_package_version || '1.0.0'
-  });
+    res.json({
+        message: 'Welcome to Ebra Holidays Backend',
+        status: 'Running',
+        timestamp: new Date().toISOString(),
+        version: process.env.npm_package_version || '1.0.0'
+    });
 });
 
-// Enhanced error handling middleware
+// API 404 handler
+app.use('/api/*', (req, res) => {
+    console.log(`404 for API route: ${req.method} ${req.path}`);
+    res.status(404).json({
+        success: false,
+        message: 'API route not found',
+        requestedPath: req.path
+    });
+});
+
+// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Error:', {
-    message: err.message,
-    stack: err.stack,
-    timestamp: new Date().toISOString(),
-    path: req.path,
-    method: req.method
-  });
+    console.error('Error:', {
+        message: err.message,
+        stack: err.stack,
+        timestamp: new Date().toISOString(),
+        path: req.path,
+        method: req.method
+    });
 
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'Something went wrong!',
-    error: process.env.NODE_ENV === 'production' ? {} : {
-      stack: err.stack,
-      details: err.details || {}
-    }
-  });
-});
-
-// Catch-all route handler (for any undefined routes)
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
-    method: req.method,
-    path: req.path,
-    timestamp: new Date().toISOString()
-  });
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || 'Something went wrong!',
+        error: process.env.NODE_ENV === 'production' ? {} : {
+            stack: err.stack,
+            details: err.details || {}
+        }
+    });
 });
 
 // Connect to Database
 connectDB();
 
+// MongoDB connection logging
+mongoose.connection.on('connected', () => {
+    console.log('MongoDB connected successfully');
+});
+
+mongoose.connection.on('error', (err) => {
+    console.error('MongoDB connection error:', err);
+});
+
 // Start server
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-  console.log(`CORS enabled for origin: ${process.env.CORS_ORIGIN || '*'}`);
+    console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+    console.log(`CORS enabled for origins: ${allowedOrigins.join(', ')}`);
 });
 
-// Enhanced error handling for unhandled rejections
+// Error handling for unhandled rejections
 process.on('unhandledRejection', (err, promise) => {
-  console.log('Unhandled Rejection:', {
-    error: err.message,
-    stack: err.stack,
-    timestamp: new Date().toISOString()
-  });
-  // Close server & exit process gracefully
-  server.close(() => {
-    console.log('Server closed due to unhandled rejection');
-    process.exit(1);
-  });
+    console.log('Unhandled Rejection:', {
+        error: err.message,
+        stack: err.stack,
+        timestamp: new Date().toISOString()
+    });
+    server.close(() => process.exit(1));
 });
 
-// Enhanced error handling for uncaught exceptions
 process.on('uncaughtException', (err) => {
-  console.log('Uncaught Exception:', {
-    error: err.message,
-    stack: err.stack,
-    timestamp: new Date().toISOString()
-  });
-  // Close server & exit process gracefully
-  server.close(() => {
-    console.log('Server closed due to uncaught exception');
-    process.exit(1);
-  });
+    console.log('Uncaught Exception:', {
+        error: err.message,
+        stack: err.stack,
+        timestamp: new Date().toISOString()
+    });
+    server.close(() => process.exit(1));
 });
 
 module.exports = app;
