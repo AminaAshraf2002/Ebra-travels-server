@@ -20,6 +20,7 @@ const app = express();
 // Allow these origins
 const allowedOrigins = [
     'https://ebra-travels.onrender.com',
+    'https://ebra-travels-iuyj.vercel.app',
     'http://localhost:5173',
     'http://localhost:5000'
 ];
